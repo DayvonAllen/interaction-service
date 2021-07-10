@@ -48,7 +48,7 @@ func (m MessageRepoImpl) Create(message *domain.Message) error {
 	}
 	conversation.Messages = append(conversation.Messages, m.Message)
 
-	err = ConversationRepoImpl{}.UpdateConversation(*conversation)
+	err = ConversationRepoImpl{}.UpdateConversation(*conversation, m.Message)
 
 	if err != nil {
 		return err

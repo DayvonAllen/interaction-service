@@ -92,7 +92,7 @@ func (c ConversationRepoImpl) FindConversation(owner, to string) (*domain.Conver
 	return &c.Conversation, nil
 }
 
-func (c ConversationRepoImpl) UpdateConversation(conversation domain.Conversation) error {
+func (c ConversationRepoImpl) UpdateConversation(conversation domain.Conversation, message domain.Message) error {
 	conn := database.MongoConnectionPool.Get().(*database.Connection)
 	defer database.MongoConnectionPool.Put(conn)
 
@@ -105,7 +105,7 @@ func (c ConversationRepoImpl) UpdateConversation(conversation domain.Conversatio
 		},
 	}
 
-	update := bson.D{{"$set", bson.D{{"messages", conversation.Messages}, {"updatedAt", time.Now()}}}}
+	update := bson.D{{"$push", bson.D{{"messages", message}}},  {"$set", bson.D{{"updatedAt", time.Now()}}}}
 
 	err := conn.ConversationCollection.FindOneAndUpdate(context.TODO(),
 		filter, update, opts).Decode(&c.Conversation)
@@ -122,7 +122,7 @@ func (c ConversationRepoImpl) UpdateConversation(conversation domain.Conversatio
 			bson.M{"from": conversation.Owner},
 		},
 	}
-	update = bson.D{{"$set", bson.D{{"messages", conversation.Messages}, {"updatedAt", time.Now()}}}}
+	update = bson.D{{"$push", bson.D{{"messages", message}}},  {"$set", bson.D{{"updatedAt", time.Now()}}}}
 
 	err = conn.ConversationCollection.FindOneAndUpdate(context.TODO(),
 		filter, update, opts).Decode(&c.Conversation)
