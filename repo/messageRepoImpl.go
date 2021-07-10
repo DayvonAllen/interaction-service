@@ -61,26 +61,23 @@ func (m MessageRepoImpl) DeleteByID(owner string, id primitive.ObjectID) error {
 	conn := database.MongoConnectionPool.Get().(*database.Connection)
 	defer database.MongoConnectionPool.Put(conn)
 
-	filter := bson.D{{"owner", owner}, {"messages._id", id}}
+	filter := bson.D{{"_id", id}}
 
-	err := conn.ConversationCollection.FindOne(context.TODO(), filter).Decode(&m.Conversation)
+	err := conn.MessageCollection.FindOne(context.TODO(), filter).Decode(&m.Message)
 
 	if err != nil {
 		return err
 	}
 
-	messages := make([]domain.Message,0, len(m.Conversation.Messages))
+	filter = bson.D{{"owner", owner}, {"messages._id", id}}
 
-	for _, v := range m.Conversation.Messages {
-		fmt.Println(v)
-		if v.Id != id {
-			messages = append(messages, v)
-		}
+	err = conn.ConversationCollection.FindOne(context.TODO(), filter).Decode(&m.Conversation)
+
+	if err != nil {
+		return err
 	}
 
-	m.Conversation.Messages = messages
-
-	update := bson.M{"$set": bson.M{"messages": messages}}
+	update := bson.M{"$pull": bson.M{"messages": m.Message}}
 
 	_, err  = conn.ConversationCollection.UpdateOne(context.TODO(), filter, update)
 
@@ -90,7 +87,6 @@ func (m MessageRepoImpl) DeleteByID(owner string, id primitive.ObjectID) error {
 
 	return nil
 }
-
 
 func NewMessageRepoImpl() MessageRepoImpl {
 	var messageRepoImpl MessageRepoImpl
