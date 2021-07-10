@@ -21,6 +21,7 @@ func SetupRoutes(app *fiber.App) {
 
 	messages := api.Group("/messages")
 	messages.Post("/", mh.CreateMessage)
+	messages.Delete("/", mh.DeleteByID)
 
 	conversations := api.Group("/conversation")
 	conversations.Get("/:username", ch.FindConversation)

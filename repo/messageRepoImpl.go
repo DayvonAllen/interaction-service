@@ -39,7 +39,6 @@ func (m MessageRepoImpl) Create(message *domain.Message) error {
 	if err != nil  {
 		if err == mongo.ErrNoDocuments {
 			err := ConversationRepoImpl{}.Create(m.Message)
-			fmt.Println(m.Message)
 			if err != nil {
 				return err
 			}
@@ -57,6 +56,41 @@ func (m MessageRepoImpl) Create(message *domain.Message) error {
 
 	return nil
 }
+
+func (m MessageRepoImpl) DeleteByID(owner string, id primitive.ObjectID) error {
+	conn := database.MongoConnectionPool.Get().(*database.Connection)
+	defer database.MongoConnectionPool.Put(conn)
+
+	filter := bson.D{{"owner", owner}, {"messages._id", id}}
+
+	err := conn.ConversationCollection.FindOne(context.TODO(), filter).Decode(&m.Conversation)
+
+	if err != nil {
+		return err
+	}
+
+	messages := make([]domain.Message,0, len(m.Conversation.Messages))
+
+	for _, v := range m.Conversation.Messages {
+		fmt.Println(v)
+		if v.Id != id {
+			messages = append(messages, v)
+		}
+	}
+
+	m.Conversation.Messages = messages
+
+	update := bson.M{"$set": bson.M{"messages": messages}}
+
+	_, err  = conn.ConversationCollection.UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 
 func NewMessageRepoImpl() MessageRepoImpl {
 	var messageRepoImpl MessageRepoImpl

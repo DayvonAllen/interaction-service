@@ -104,6 +104,7 @@ func (c ConversationRepoImpl) UpdateConversation(conversation domain.Conversatio
 			bson.M{"from": conversation.To},
 		},
 	}
+
 	update := bson.D{{"$set", bson.D{{"messages", conversation.Messages}, {"updatedAt", time.Now()}}}}
 
 	err := conn.ConversationCollection.FindOneAndUpdate(context.TODO(),
@@ -113,7 +114,6 @@ func (c ConversationRepoImpl) UpdateConversation(conversation domain.Conversatio
 		return err
 	}
 
-	fmt.Println("ran")
 	opts = options.FindOneAndUpdate().SetUpsert(true)
 	filter = bson.M{
 		"owner": conversation.To,
