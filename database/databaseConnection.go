@@ -13,6 +13,8 @@ type Connection struct {
 	UserCollection     *mongo.Collection
 	StoryCollection    *mongo.Collection
 	EventCollection    *mongo.Collection
+	ConversationCollection    *mongo.Collection
+	MessageCollection    *mongo.Collection
 	*mongo.Database
 }
 
@@ -35,7 +37,9 @@ func ConnectToDB() (*Connection, error) {
 	userCollection := db.Collection("users")
 	storiesCollection := db.Collection("stories")
 	eventsCollection := db.Collection("events")
+	conversationCollection := db.Collection("conversation")
+	messageCollection := db.Collection("message")
 
-	dbConnection := &Connection{client, userCollection, storiesCollection,eventsCollection,db}
+	dbConnection := &Connection{client, userCollection, storiesCollection,eventsCollection,conversationCollection,messageCollection,db}
 	return dbConnection, nil
 }

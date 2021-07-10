@@ -9,7 +9,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 )
 
-func ProcessMessage(message domain.Message) error {
+func ProcessMessage(message domain.MessageObject) error {
 
 	if message.ResourceType == "user" {
 		// 201 is the created messageType
@@ -107,12 +107,12 @@ func PushUserToQueue(message []byte, topic string) error {
 		fmt.Println("Failed to send message to the queue")
 	}
 
-	fmt.Printf("Message is stored in topic(%s)/partition(%d)/offset(%d)\n", "user", partition, offset)
+	fmt.Printf("MessageObject is stored in topic(%s)/partition(%d)/offset(%d)\n", "user", partition, offset)
 	return nil
 }
 
 func SendKafkaMessage(story *domain.Story, eventType int) error {
-	um := new(domain.Message)
+	um := new(domain.MessageObject)
 	um.Story = *story
 
 	// user created/updated event
@@ -135,7 +135,7 @@ func SendKafkaMessage(story *domain.Story, eventType int) error {
 	return nil
 }
 func SendEventMessage(event *domain.Event, eventType int) error {
-	um := new(domain.Message)
+	um := new(domain.MessageObject)
 	um.Event = *event
 
 	// user created/updated event
