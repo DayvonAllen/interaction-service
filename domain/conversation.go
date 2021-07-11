@@ -7,10 +7,21 @@ import (
 
 type Conversation struct {
 	Id        primitive.ObjectID `bson:"_id" json:"-"`
-	Owner     string `bson:"owner" json:"-"`
-	From      string             `json:"-" bson:"from"`
-	To        string             `json:"to" bson:"to"`
-	Messages  []Message `bson:"messages" json:"messages"`
+	Owner     string             `bson:"owner" json:"-"`
+	From      string             `bson:"from" json:"-"`
+	To        string             `bson:"to" json:"to"`
+	Messages  []Message          `bson:"messages" json:"messages"`
 	CreatedAt time.Time          `bson:"createdAt" json:"-"`
 	UpdatedAt time.Time          `bson:"updatedAt" json:"-"`
+}
+
+type ConversationPreview struct {
+	Id             primitive.ObjectID `bson:"_id" json:"-"`
+	Owner          string             `bson:"-" json:"-"`
+	From           string             `bson:"-" json:"-" `
+	To             string             `bson:"-" json:"-"`
+	Messages       []Message          `bson:"-" json:"-"`
+	PreviewMessage Message            `bson:"-" json:"previewMessage"`
+	CreatedAt      time.Time          `bson:"-" json:"-"`
+	UpdatedAt      time.Time          `bson:"-" json:"updatedAt"`
 }

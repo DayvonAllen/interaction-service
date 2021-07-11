@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/net/context"
+	"log"
 	"time"
 )
 
@@ -16,6 +17,7 @@ type ConversationRepoImpl struct {
 	Conversation     domain.Conversation
 	Conversation2    domain.Conversation
 	ConversationList []domain.Conversation
+	ConversationPreview []domain.ConversationPreview
 }
 
 func (c ConversationRepoImpl) Create(message domain.Message) error {
@@ -27,14 +29,16 @@ func (c ConversationRepoImpl) Create(message domain.Message) error {
 	c.Conversation.Owner = message.From
 	c.Conversation.From = message.From
 	c.Conversation.To = message.To
+	message.Read = true
 	c.Conversation.Messages = append(c.Conversation.Messages, message)
 	c.Conversation.UpdatedAt = time.Now()
 
 	c.Conversation2.Id = primitive.NewObjectID()
 	c.Conversation2.CreatedAt = time.Now()
 	c.Conversation2.Owner = message.To
-	c.Conversation2.From = message.From
-	c.Conversation2.To = message.To
+	c.Conversation2.From = message.To
+	c.Conversation2.To = message.From
+	message.Read = false
 	c.Conversation2.Messages = append(c.Conversation2.Messages, message)
 	c.Conversation2.UpdatedAt = time.Now()
 
@@ -89,8 +93,65 @@ func (c ConversationRepoImpl) FindConversation(owner, to string) (*domain.Conver
 		return nil, err
 	}
 
+	if c.Conversation.Messages[len(c.Conversation.Messages) - 1].Read != true {
+		mes := make([]domain.Message, 0, len(c.Conversation.Messages))
+		for _, v := range c.Conversation.Messages {
+			v.Read = true
+
+			mes = append(mes, v)
+		}
+
+		update := bson.D{{"$set", bson.D{{"messages", &mes}}}}
+
+		_, err = conn.ConversationCollection.UpdateMany(context.TODO(),
+			filter, update)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &c.Conversation, nil
 }
+
+func (c ConversationRepoImpl) GetConversationPreviews(owner string) (*[]domain.ConversationPreview, error) {
+	conn := database.MongoConnectionPool.Get().(*database.Connection)
+	defer database.MongoConnectionPool.Put(conn)
+
+	filter := bson.M{
+		"owner": owner,
+
+	}
+
+	cur, err := conn.ConversationCollection.Find(context.TODO(),
+		filter)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cur.All(context.TODO(), &c.ConversationList); err != nil {
+		log.Fatal(err)
+	}
+
+
+	for _, v := range c.ConversationList {
+		if len(v.Messages) > 0 {
+			preview := new(domain.ConversationPreview)
+			preview.Id = v.Id
+			preview.To = v.To
+			preview.PreviewMessage = v.Messages[len(v.Messages) - 1]
+			preview.From = v.From
+			preview.Owner = v.Owner
+			preview.CreatedAt = v.CreatedAt
+			preview.UpdatedAt = v.UpdatedAt
+			c.ConversationPreview = append(c.ConversationPreview, *preview)
+		}
+	}
+
+	return &c.ConversationPreview, nil
+}
+
 
 func (c ConversationRepoImpl) UpdateConversation(conversation domain.Conversation, message domain.Message) error {
 	conn := database.MongoConnectionPool.Get().(*database.Connection)

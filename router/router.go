@@ -25,6 +25,7 @@ func SetupRoutes(app *fiber.App) {
 
 	conversations := api.Group("/conversation")
 	conversations.Get("/:username", ch.FindConversation)
+	conversations.Get("/", ch.GetConversationPreviews)
 }
 
 func Setup() *fiber.App {

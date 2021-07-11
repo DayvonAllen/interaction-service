@@ -10,6 +10,7 @@ type Message struct {
 	Content   string             `bson:"content" json:"content"`
 	From      string             `json:"-" bson:"from"`
 	To        string             `json:"to" bson:"to"`
+	Read	  bool 				 `bson:"read" json:"read"`
 	CreatedAt time.Time          `bson:"createdAt" json:"sentAt"`
 	UpdatedAt time.Time          `bson:"updatedAt" json:"-"`
 }
