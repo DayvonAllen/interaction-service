@@ -16,7 +16,7 @@ type MessageRepoImpl struct {
 	Conversation        domain.Conversation
 }
 
-func (m MessageRepoImpl) Create(message *domain.Message) error {
+func (m MessageRepoImpl) Create(message *domain.Message) (*domain.Conversation, error) {
 	conn := database.MongoConnectionPool.Get().(*database.Connection)
 	defer database.MongoConnectionPool.Put(conn)
 
@@ -25,14 +25,14 @@ func (m MessageRepoImpl) Create(message *domain.Message) error {
 	_, err := conn.MessageCollection.InsertOne(context.TODO(), &message)
 
 	if err != nil {
-		return fmt.Errorf("error processing data")
+		return nil, fmt.Errorf("error processing data")
 	}
 
 	err = conn.MessageCollection.FindOne(context.TODO(),
 		bson.D{{"_id", message.Id}}).Decode(&m.Message)
 
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	conversation, err := ConversationRepoImpl{}.FindByOwner(m.Message)
@@ -41,21 +41,27 @@ func (m MessageRepoImpl) Create(message *domain.Message) error {
 		if err == mongo.ErrNoDocuments {
 			err := ConversationRepoImpl{}.Create(m.Message)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			return nil
+			conversation, err = ConversationRepoImpl{}.FindConversation(m.Message.From, m.Message.To)
+			if err != nil {
+				return nil, err
+			}
+			return conversation, nil
 		}
-		return err
+		return nil, err
 	}
 	conversation.Messages = append(conversation.Messages, m.Message)
 
 	err = ConversationRepoImpl{}.UpdateConversation(*conversation, m.Message)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	conversation, err =  ConversationRepoImpl{}.FindConversation(m.Message.From, m.Message.To)
+
+	return conversation, nil
 }
 
 func (m MessageRepoImpl) DeleteByID(owner string, id primitive.ObjectID) error {

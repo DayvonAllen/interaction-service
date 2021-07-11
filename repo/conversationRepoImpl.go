@@ -78,6 +78,10 @@ func (c ConversationRepoImpl) FindConversation(owner, to string) (*domain.Conver
 	conn := database.MongoConnectionPool.Get().(*database.Connection)
 	defer database.MongoConnectionPool.Put(conn)
 
+	if owner == to {
+		return nil, fmt.Errorf("bad request")
+	}
+
 	filter := bson.M{
 		"owner": owner,
 		"$or": []interface{}{

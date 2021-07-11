@@ -7,7 +7,7 @@ import (
 )
 
 type MessageService interface {
-	Create(message *domain.Message) error
+	Create(message *domain.Message) (*domain.Conversation, error)
 	DeleteByID(owner string, id primitive.ObjectID) error
 	DeleteAllByIDs(owner string, messageIds []domain.DeleteMessage) error
 }
@@ -16,12 +16,12 @@ type DefaultMessageService struct {
 	repo repo.MessageRepo
 }
 
-func (m DefaultMessageService) Create(message *domain.Message) error {
-	err := m.repo.Create(message)
+func (m DefaultMessageService) Create(message *domain.Message) (*domain.Conversation, error) {
+	conversation, err := m.repo.Create(message)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return conversation, nil
 }
 
 func (m DefaultMessageService) DeleteByID(owner string, id primitive.ObjectID) error {

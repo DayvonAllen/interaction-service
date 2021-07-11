@@ -6,7 +6,7 @@ import (
 )
 
 type MessageRepo interface {
-	Create(message *domain.Message) error
+	Create(message *domain.Message) (*domain.Conversation, error)
 	DeleteByID(owner string, id primitive.ObjectID) error
 	DeleteAllByIDs(owner string, messages []domain.DeleteMessage) error
 }
