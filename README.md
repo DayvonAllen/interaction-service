@@ -13,7 +13,7 @@
 - Get all conversation preview data:
     - `http://localhost:8083/conversation`
 - Delete message by ID:
-    - `http://localhost:8083/messages/`
+    - `http://localhost:8083/messages`
     - JSON:
 ```
 {
