@@ -57,7 +57,7 @@ func (c ConversationRepoImpl) Create(message domain.Message) error {
 	c.Conversation.Owner = message.From
 	c.Conversation.From = message.From
 	c.Conversation.To = message.To
-	c.Conversation.UnreadCount = 0
+	c.Conversation.UnreadCount = 1
 	c.Conversation.Messages = append(c.Conversation.Messages, message)
 	c.Conversation.UpdatedAt = time.Now()
 
