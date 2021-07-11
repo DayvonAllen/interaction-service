@@ -9,7 +9,7 @@ import (
 type MessageService interface {
 	Create(message *domain.Message) error
 	DeleteByID(owner string, id primitive.ObjectID) error
-	DeleteAllByIDs(owner string, ids []primitive.ObjectID) error
+	DeleteAllByIDs(owner string, messageIds []domain.DeleteMessage) error
 }
 
 type DefaultMessageService struct {
@@ -32,8 +32,8 @@ func (m DefaultMessageService) DeleteByID(owner string, id primitive.ObjectID) e
 	return nil
 }
 
-func (m DefaultMessageService) DeleteAllByIDs(owner string, ids []primitive.ObjectID) error {
-	err := m.repo.DeleteAllByIDs(owner, ids)
+func (m DefaultMessageService) DeleteAllByIDs(owner string, messageIds []domain.DeleteMessage) error {
+	err := m.repo.DeleteAllByIDs(owner, messageIds)
 	if err != nil {
 		return err
 	}

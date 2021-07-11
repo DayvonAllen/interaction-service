@@ -89,18 +89,18 @@ func (mh *MessageHandler) DeleteByIDs(c *fiber.Ctx) error {
 		return c.Status(401).JSON(fiber.Map{"status": "error", "message": "error...", "data": "Unauthorized user"})
 	}
 
-	message := new(domain.DeleteMessages)
-	err = c.BodyParser(message)
+	messages := new(domain.DeleteMessages)
+	err = c.BodyParser(messages)
 
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "error...", "data": fmt.Sprintf("%v", err)})
 	}
 
-	err = mh.MessageService.DeleteAllByIDs(u.Username, message.Ids)
+	err = mh.MessageService.DeleteAllByIDs(u.Username, messages.MessageIds)
 
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "error...", "data": fmt.Sprintf("%v", err)})
 	}
 
-	return c.Status(201).JSON(fiber.Map{"status": "success", "message": "success", "data": "success"})
+	return c.Status(200).JSON(fiber.Map{"status": "success", "message": "success", "data": "success"})
 }

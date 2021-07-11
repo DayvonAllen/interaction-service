@@ -8,7 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"log"
 )
 
 type MessageRepoImpl struct {
@@ -90,26 +89,47 @@ func (m MessageRepoImpl) DeleteByID(owner string, id primitive.ObjectID) error {
 	return nil
 }
 
-func (m MessageRepoImpl) DeleteAllByIDs(owner string, ids []primitive.ObjectID) error {
+func exists(id primitive.ObjectID, ids []domain.DeleteMessage) bool {
+	for _, v := range ids {
+		if v.Id == id {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (m MessageRepoImpl) DeleteAllByIDs(owner string, messageIds []domain.DeleteMessage) error {
 	conn := database.MongoConnectionPool.Get().(*database.Connection)
 	defer database.MongoConnectionPool.Put(conn)
 
-	filter := bson.D{{"owner", owner}, {"_id",bson.D{{"$in", ids}}}}
+	if len(messageIds) == 0 {
+		return fmt.Errorf("bad values")
+	}
 
-	cur, err := conn.MessageCollection.Find(context.TODO(), filter)
+	fmt.Println(messageIds)
+	filter := bson.D{{"owner", owner}, {"messages._id", bson.M{"$in": bson.A{messageIds[0].Id}}}}
+
+	err := conn.ConversationCollection.FindOne(context.TODO(), filter).Decode(&m.Conversation)
 
 	if err != nil {
 		return err
 	}
 
-	if err = cur.All(context.TODO(), &m.Message); err != nil {
-		log.Fatal(err)
+	fmt.Println(m.Conversation)
+
+	mes := make([]domain.Message, 0, len(m.Conversation.Messages))
+	for _, v := range m.Conversation.Messages {
+		if !exists(v.Id, messageIds) {
+			mes = append(mes, v)
+		}
 	}
 
-	update := bson.M{"$pull": bson.M{"messages": m.MessageList}}
+	m.Conversation.Messages = mes
 
+	update := bson.M{"$set": bson.M{"messages": m.Conversation.Messages}}
 
-	_, err = conn.MessageCollection.UpdateMany(context.TODO(), filter, update)
+	_, err = conn.ConversationCollection.UpdateOne(context.TODO(), filter, update)
 
 	if err != nil {
 		return err

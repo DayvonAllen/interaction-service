@@ -93,6 +93,10 @@ func (c ConversationRepoImpl) FindConversation(owner, to string) (*domain.Conver
 		return nil, err
 	}
 
+	if len(c.Conversation.Messages) == 0 {
+		return &c.Conversation, nil
+	}
+
 	if c.Conversation.Messages[len(c.Conversation.Messages) - 1].Read != true {
 		mes := make([]domain.Message, 0, len(c.Conversation.Messages))
 		for _, v := range c.Conversation.Messages {
@@ -109,6 +113,17 @@ func (c ConversationRepoImpl) FindConversation(owner, to string) (*domain.Conver
 		if err != nil {
 			return nil, err
 		}
+
+		filter = bson.M{
+			"owner": owner,
+			"$or": []interface{}{
+				bson.M{"to": to},
+				bson.M{"from": to},
+			},
+		}
+
+		err = conn.ConversationCollection.FindOne(context.TODO(),
+			filter).Decode(&c.Conversation)
 	}
 
 	return &c.Conversation, nil
@@ -133,7 +148,6 @@ func (c ConversationRepoImpl) GetConversationPreviews(owner string) (*[]domain.C
 	if err = cur.All(context.TODO(), &c.ConversationList); err != nil {
 		log.Fatal(err)
 	}
-
 
 	for _, v := range c.ConversationList {
 		if len(v.Messages) > 0 {
