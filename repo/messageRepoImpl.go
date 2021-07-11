@@ -8,10 +8,12 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"log"
 )
 
 type MessageRepoImpl struct {
 	Message             domain.Message
+	MessageList             []domain.Message
 	Conversation        domain.Conversation
 }
 
@@ -80,6 +82,34 @@ func (m MessageRepoImpl) DeleteByID(owner string, id primitive.ObjectID) error {
 	update := bson.M{"$pull": bson.M{"messages": m.Message}}
 
 	_, err  = conn.ConversationCollection.UpdateOne(context.TODO(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m MessageRepoImpl) DeleteAllByIDs(owner string, ids []primitive.ObjectID) error {
+	conn := database.MongoConnectionPool.Get().(*database.Connection)
+	defer database.MongoConnectionPool.Put(conn)
+
+	filter := bson.D{{"owner", owner}, {"_id",bson.D{{"$in", ids}}}}
+
+	cur, err := conn.MessageCollection.Find(context.TODO(), filter)
+
+	if err != nil {
+		return err
+	}
+
+	if err = cur.All(context.TODO(), &m.Message); err != nil {
+		log.Fatal(err)
+	}
+
+	update := bson.M{"$pull": bson.M{"messages": m.MessageList}}
+
+
+	_, err = conn.MessageCollection.UpdateMany(context.TODO(), filter, update)
 
 	if err != nil {
 		return err

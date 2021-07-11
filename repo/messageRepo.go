@@ -8,6 +8,6 @@ import (
 type MessageRepo interface {
 	Create(message *domain.Message) error
 	DeleteByID(owner string, id primitive.ObjectID) error
-	//DeleteAllByIDs(owner string, ids []primitive.ObjectID) error
+	DeleteAllByIDs(owner string, ids []primitive.ObjectID) error
 }
 

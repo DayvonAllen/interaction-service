@@ -21,6 +21,7 @@ func SetupRoutes(app *fiber.App) {
 
 	messages := api.Group("/messages")
 	messages.Post("/", mh.CreateMessage)
+	messages.Delete("/multi", mh.DeleteByIDs)
 	messages.Delete("/", mh.DeleteByID)
 
 	conversations := api.Group("/conversation")
