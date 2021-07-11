@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/net/context"
 	"log"
@@ -109,6 +110,32 @@ func (c ConversationRepoImpl) FindConversation(owner, to string) (*domain.Conver
 		return nil, fmt.Errorf("bad request")
 	}
 
+	err := conn.UserCollection.FindOne(context.TODO(), bson.D{{"username", to}}).Decode(&c.User)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range c.User.BlockList {
+		if v == owner {
+			return nil, fmt.Errorf("error")
+		}
+
+		if v == to {
+			return nil, fmt.Errorf("error")
+		}
+	}
+
+	for _, v := range c.User.BlockByList {
+		if v == owner {
+			return nil, fmt.Errorf("error")
+		}
+
+		if v == to {
+			return nil, fmt.Errorf("error")
+		}
+	}
+
 	filter := bson.M{
 		"owner": owner,
 		"$or": []interface{}{
@@ -117,10 +144,14 @@ func (c ConversationRepoImpl) FindConversation(owner, to string) (*domain.Conver
 		},
 	}
 
-	err := conn.ConversationCollection.FindOne(context.TODO(),
+	err = conn.ConversationCollection.FindOne(context.TODO(),
 		filter).Decode(&c.Conversation)
 
 	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			c.Conversation.Messages = make([]domain.Message,0, 0)
+			return &c.Conversation, nil
+		}
 		return nil, err
 	}
 
