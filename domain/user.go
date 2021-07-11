@@ -9,6 +9,8 @@ type User struct {
 	CurrentTagLine       string               `bson:"currentTagLine" json:"currentTagLine"`
 	ProfilePictureUrl    string               `bson:"profilePictureUrl" json:"profilePictureUrl"`
 	ProfileIsViewable    bool                 `bson:"profileIsViewable" json:"profileIsViewable"`
+	BlockList            []primitive.ObjectID `bson:"blockList" json:"blockList"`
+	BlockByList          []primitive.ObjectID `bson:"blockByList" json:"blockByList"`
 	AcceptMessages       bool                 `bson:"acceptMessages" json:"acceptMessages"`
 	IsVerified           bool                 `bson:"isVerified" json:"-"`
 }
