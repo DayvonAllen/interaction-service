@@ -26,13 +26,30 @@ func (c ConversationRepoImpl) Create(message domain.Message) error {
 	defer database.MongoConnectionPool.Put(conn)
 
 	err := conn.UserCollection.FindOne(context.TODO(), bson.D{{"username", message.To}}).Decode(&c.User)
+
 	if err != nil {
 		return err
 	}
 
-	//for _, v := range c.User.BlockByList {
-	//	if v ==
-	//}
+	for _, v := range c.User.BlockList {
+		if v == message.From {
+			return fmt.Errorf("error")
+		}
+
+		if v == message.To {
+			return fmt.Errorf("error")
+		}
+	}
+
+	for _, v := range c.User.BlockByList {
+		if v == message.From {
+			return fmt.Errorf("error")
+		}
+
+		if v == message.To {
+			return fmt.Errorf("error")
+		}
+	}
 
 	c.Conversation.Id = primitive.NewObjectID()
 	c.Conversation.CreatedAt = time.Now()

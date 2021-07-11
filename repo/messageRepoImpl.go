@@ -14,15 +14,43 @@ type MessageRepoImpl struct {
 	Message             domain.Message
 	MessageList             []domain.Message
 	Conversation        domain.Conversation
+	User				domain.User
 }
 
 func (m MessageRepoImpl) Create(message *domain.Message) (*domain.Conversation, error) {
 	conn := database.MongoConnectionPool.Get().(*database.Connection)
 	defer database.MongoConnectionPool.Put(conn)
 
+
+	err := conn.UserCollection.FindOne(context.TODO(), bson.D{{"username", message.To}}).Decode(&m.User)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range m.User.BlockList {
+		if v == message.From {
+			return nil, fmt.Errorf("error")
+		}
+
+		if v == message.To {
+			return nil, fmt.Errorf("error")
+		}
+	}
+
+	for _, v := range m.User.BlockByList {
+		if v == message.From {
+			return nil, fmt.Errorf("error")
+		}
+
+		if v == message.To {
+			return nil, fmt.Errorf("error")
+		}
+	}
+
 	message.Id = primitive.NewObjectID()
 
-	_, err := conn.MessageCollection.InsertOne(context.TODO(), &message)
+	_, err = conn.MessageCollection.InsertOne(context.TODO(), &message)
 
 	if err != nil {
 		return nil, fmt.Errorf("error processing data")
