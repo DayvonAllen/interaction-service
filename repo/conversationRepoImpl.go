@@ -57,7 +57,7 @@ func (c ConversationRepoImpl) Create(message domain.Message) error {
 	c.Conversation.Owner = message.From
 	c.Conversation.From = message.From
 	c.Conversation.To = message.To
-	message.Read = true
+	c.Conversation.UnreadCount = 0
 	c.Conversation.Messages = append(c.Conversation.Messages, message)
 	c.Conversation.UpdatedAt = time.Now()
 
@@ -66,7 +66,7 @@ func (c ConversationRepoImpl) Create(message domain.Message) error {
 	c.Conversation2.Owner = message.To
 	c.Conversation2.From = message.To
 	c.Conversation2.To = message.From
-	message.Read = false
+	c.Conversation2.UnreadCount = 1
 	c.Conversation2.Messages = append(c.Conversation2.Messages, message)
 	c.Conversation2.UpdatedAt = time.Now()
 
@@ -167,7 +167,9 @@ func (c ConversationRepoImpl) FindConversation(owner, to string) (*domain.Conver
 			mes = append(mes, v)
 		}
 
-		update := bson.D{{"$set", bson.D{{"messages", &mes}}}}
+		c.Conversation.UnreadCount = 0
+
+		update := bson.D{{"$set", bson.D{{"messages", &mes}, {"unreadCount", c.Conversation.UnreadCount}}}}
 
 		_, err = conn.ConversationCollection.UpdateMany(context.TODO(),
 			filter, update)
@@ -219,6 +221,7 @@ func (c ConversationRepoImpl) GetConversationPreviews(owner string) (*[]domain.C
 			preview.PreviewMessage = v.Messages[len(v.Messages) - 1]
 			preview.From = v.From
 			preview.Owner = v.Owner
+			preview.UnreadCount = v.UnreadCount
 			preview.CreatedAt = v.CreatedAt
 			preview.UpdatedAt = v.UpdatedAt
 			c.ConversationPreview = append(c.ConversationPreview, *preview)
@@ -259,7 +262,7 @@ func (c ConversationRepoImpl) UpdateConversation(conversation domain.Conversatio
 			bson.M{"from": conversation.Owner},
 		},
 	}
-	update = bson.D{{"$push", bson.D{{"messages", message}}},  {"$set", bson.D{{"updatedAt", time.Now()}}}}
+	update = bson.D{{"$push", bson.D{{"messages", message}}},  {"$set", bson.D{{"updatedAt", time.Now()}}},  {"$inc", bson.D{{"unreadCount", 1}}}}
 
 	err = conn.ConversationCollection.FindOneAndUpdate(context.TODO(),
 		filter, update, opts).Decode(&c.Conversation)
