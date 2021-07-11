@@ -14,6 +14,7 @@ import (
 
 type ConversationRepoImpl struct {
 	Message          domain.Message
+	User			 domain.User
 	Conversation     domain.Conversation
 	Conversation2    domain.Conversation
 	ConversationList []domain.Conversation
@@ -23,6 +24,15 @@ type ConversationRepoImpl struct {
 func (c ConversationRepoImpl) Create(message domain.Message) error {
 	conn := database.MongoConnectionPool.Get().(*database.Connection)
 	defer database.MongoConnectionPool.Put(conn)
+
+	err := conn.UserCollection.FindOne(context.TODO(), bson.D{{"username", message.To}}).Decode(&c.User)
+	if err != nil {
+		return err
+	}
+
+	//for _, v := range c.User.BlockByList {
+	//	if v ==
+	//}
 
 	c.Conversation.Id = primitive.NewObjectID()
 	c.Conversation.CreatedAt = time.Now()
@@ -42,7 +52,7 @@ func (c ConversationRepoImpl) Create(message domain.Message) error {
 	c.Conversation2.Messages = append(c.Conversation2.Messages, message)
 	c.Conversation2.UpdatedAt = time.Now()
 
-	_, err := conn.ConversationCollection.InsertOne(context.TODO(), c.Conversation)
+	_, err = conn.ConversationCollection.InsertOne(context.TODO(), c.Conversation)
 
 	if err != nil {
 		return fmt.Errorf("error processing data")
